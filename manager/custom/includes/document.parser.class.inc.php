@@ -89,7 +89,128 @@ class DocumentParser extends DocumentParserOriginal{
             $identifier = $this->cleanDocumentIdentifier($identifier);
             $method = $this->documentMethod;
         }
-        return parent::getDocumentObject($method,$identifier);
+        $tblsc= $this->getFullTableName("site_content");
+        $tbldg= $this->getFullTableName("document_groups");
+
+        // allow alias to be full path
+		/*
+        if($method == 'alias') {
+            $identifier = $this->cleanDocumentIdentifier($identifier);
+            $method = $this->documentMethod;
+        }
+		*/
+        if($method == 'alias' && $this->config['use_alias_path'] && array_key_exists($identifier, $this->documentListing)) {
+            $method = 'id';
+            $identifier = $this->documentListing[$identifier];
+        }
+        // get document groups for current user
+        if ($docgrp= $this->getUserDocGroups())
+            $docgrp= implode(",", $docgrp);
+        // get document
+        $access= ($this->isFrontend() ? "sc.privateweb=0" : "1='" . $_SESSION['mgrRole'] . "' OR sc.privatemgr=0") .
+         (!$docgrp ? "" : " OR dg.document_group IN ($docgrp)");
+        $sql= "SELECT sc.*
+              FROM $tblsc sc
+              LEFT JOIN $tbldg dg ON dg.document = sc.id
+              WHERE sc." . $method . " = '" . $identifier . "'
+              AND ($access) LIMIT 1;";
+        $result= $this->db->query($sql);
+        $rowCount= $this->db->getRecordCount($result);
+        if ($rowCount < 1) {
+            if ($this->config['unauthorized_page']) {
+                // method may still be alias, while identifier is not full path alias, e.g. id not found above
+                if ($method === 'alias') {
+                    $q = "SELECT dg.id FROM $tbldg dg, $tblsc sc WHERE dg.document = sc.id AND sc.alias = '{$identifier}' LIMIT 1;";
+                } else {
+                    $q = "SELECT id FROM $tbldg WHERE document = '{$identifier}' LIMIT 1;";
+                }
+                // check if file is not public
+                $secrs= $this->db->query($q);
+                if ($secrs)
+                    $seclimit= $this->db->getRecordCount($secrs);
+            }
+            if ($seclimit > 0) {
+                // match found but not publicly accessible, send the visitor to the unauthorized_page
+                $this->sendUnauthorizedPage();
+                exit; // stop here
+            } else {
+                $this->sendErrorPage();
+                exit;
+            }
+        }
+
+        # this is now the document :) #
+        $documentObject= $this->db->getRow($result);
+        if ($documentObject['template']) {
+            // load TVs and merge with document - Orig by Apodigm - Docvars
+			/* это слишком тормозит при большом количестве ресурсов
+            $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
+            $sql .= "FROM " . $this->getFullTableName("site_tmplvars") . " tv ";
+            $sql .= "INNER JOIN " . $this->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
+            $sql .= "LEFT JOIN " . $this->getFullTableName("site_tmplvar_contentvalues")." tvc ON tvc.tmplvarid=tv.id AND tvc.contentid = '" . $documentObject['id'] . "' ";
+            $sql .= "WHERE tvtpl.templateid = '" . $documentObject['template'] . "'";
+            $rs= $this->db->query($sql);
+            $rowCount= $this->db->getRecordCount($rs);
+            if ($rowCount > 0) {
+                for ($i= 0; $i < $rowCount; $i++) {
+                    $row= $this->db->getRow($rs);
+                    $tmplvars[$row['name']]= array (
+                        $row['name'],
+                        $row['value'],
+                        $row['display'],
+                        $row['display_params'],
+                        $row['type']
+                    );
+                }
+                $documentObject= array_merge($documentObject, $tmplvars);
+            }
+			*/
+			
+			$TvIDsStr='';
+			$tvsq="SELECT `tvs`.`id`,`tvs`.`name`,`tvs`.`default_text` as `value`,`tvs`.`display`,`tvs`.`display_params`,`tvs`.`type`";
+			$tvsq.="FROM ".$this->getFullTableName("site_tmplvars")." tvs,".$this->getFullTableName("site_tmplvar_templates")." tvtmpl ";
+			$tvsq.="WHERE `tvs`.`id`=`tvtmpl`.`tmplvarid` AND `tvtmpl`.`templateid`=".$documentObject['template'];
+			$tvsq.=" ORDER BY `tvtmpl`.`rank` ASC";
+			$query=$this->db->query($tvsq);
+			while($row=$this->db->getRow($query)){
+				$tmpTvs[$row['id']]['name']=$row['name'];
+				$tmpTvs[$row['id']]['value']=$row['value'];
+				$tmpTvs[$row['id']]['display']=$row['display'];
+				$tmpTvs[$row['id']]['display_params']=$row['display_params'];
+				$tmpTvs[$row['id']]['type']=$row['type'];
+				$TvIDsStr.=$row['id'].',';
+			}
+			
+			if($TvIDsStr!=''){
+				$TvIDsStr=substr($TvIDsStr,0,-1);
+				$tvsq2="SELECT tmplvarid,value FROM ".$this->getFullTableName("site_tmplvar_contentvalues")." WHERE tmplvarid IN (".$TvIDsStr.") LIMIT 0,".count($tmpTvs);
+				$query2=$this->db->query($tvsq2);
+				$rs=$this->db->getRecordCount($query2);
+				while($row2=$this->db->getRow($query2)){
+					if(isset($tmpTvs[$row2['tmplvarid']]['value'])&&$row2['value']!=''){
+						$tmpTvs[$row2['tmplvarid']]['value']=$row2['value'];
+					}
+				}
+			}
+			
+			if(isset($tmpTvs)&&is_array($tmpTvs)){
+				foreach($tmpTvs as $k=>$v){
+					$tmplvars[$v['name']]=array(
+						$v['name'],
+                        $v['value'],
+                        $v['display'],
+                        $v['display_params'],
+                        $v['type']
+					);
+				}
+				
+				$documentObject= array_merge($documentObject, $tmplvars);
+			}
+			
+			
+			
+        }
+        return $documentObject;
     }
 
     function executeParser() {
