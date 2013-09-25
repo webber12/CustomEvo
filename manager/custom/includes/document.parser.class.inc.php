@@ -143,7 +143,9 @@ class DocumentParser extends DocumentParserOriginal{
         $documentObject= $this->db->getRow($result);
         if ($documentObject['template']) {
             // load TVs and merge with document - Orig by Apodigm - Docvars
-			/* это слишком тормозит при большом количестве ресурсов
+			/********************** 
+			это слишком тормозит при большом количестве ресурсов поэтому перепишем
+			************************************************************
             $sql= "SELECT tv.*, IF(tvc.value!='',tvc.value,tv.default_text) as value ";
             $sql .= "FROM " . $this->getFullTableName("site_tmplvars") . " tv ";
             $sql .= "INNER JOIN " . $this->getFullTableName("site_tmplvar_templates")." tvtpl ON tvtpl.tmplvarid = tv.id ";
@@ -164,7 +166,7 @@ class DocumentParser extends DocumentParserOriginal{
                 }
                 $documentObject= array_merge($documentObject, $tmplvars);
             }
-			*/
+			********************************************/
 			
 			$TvIDsStr='';
 			$tvsq="SELECT `tvs`.`id`,`tvs`.`name`,`tvs`.`default_text` as `value`,`tvs`.`display`,`tvs`.`display_params`,`tvs`.`type`";
