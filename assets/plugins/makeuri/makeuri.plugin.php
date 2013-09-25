@@ -19,28 +19,12 @@ if(!function_exists("makeNewUri")){
 }
 
 if(!function_exists("resetOldUri")){
-    function resetOldUri($idSQL,$newParent){
+    function resetOldUri($idSQL,$parent){
         global $modx;
         $table = $modx->getFullTableName("site_content");
         $modx->db->update(array('uri'=>''),$table,'id ='.$idSQL);
-        if($newParent!=0){
-            $modx->db->update(array('uri'=>''),$table,'id ='.$newParent);
-        }
-    }
-}
-
-if(!function_exists("resetOldChildsUri")){
-    function resetOldChildsUri($idSQL){
-        global $modx;
-        $table = $modx->getFullTableName("site_content");
-        $docChilds=$modx->getChildIds($idSQL);
-        $childs='';
-        foreach ($docChilds as $v){
-            $childs.=$v.',';
-        }
-        $childs=substr($childs,0,-1);
-        if($childs!=''){
-            $modx->db->update(array('uri'=>''),$table,'id IN ('.$childs.')');
+        if($parent!=0){
+            $modx->db->update(array('uri'=>''),$table,'id ='.$parent);
         }
     }
 }
@@ -49,34 +33,8 @@ if(!function_exists("replaceChildsUri")){
     function replaceChildsUri($idSQL,$oldUri,$newUri){
         global $modx;
         $table = $modx->getFullTableName("site_content");
-    /*    $docChilds=$modx->getChildIds($idSQL);
-        $childs='';
-        foreach ($docChilds as $v){
-            $childs.=$v.',';
-        }
-        $childs=substr($childs,0,-1);
-        if($childs!=''){*/
-		//	$query="UPDATE $table SET `uri`= REPLACE(`uri`, '".$oldUri."', '".$newUri."') WHERE id IN (".$childs.") AND `uri` LIKE '".$oldUri."%'";
-			$query="UPDATE $table SET `uri`= REPLACE(`uri`, '".$oldUri."', '".$newUri."') WHERE `uri` LIKE '".$oldUri."%'";
-		//	echo $query;
-            $q=$modx->db->query($query);
-     /*   }*/
-    }
-}
-
-if(!function_exists("makeNewChildsUri")){
-    function makeNewChildsUri($idSQL){
-        global $modx;
-        $table = $modx->getFullTableName("site_content");
-        $docChilds=$modx->getChildIds($idSQL,1);
-        foreach ($docChilds as $v){//удаляем текущие записи в массиве, чтоб не мешали изменениям
-            if(isset($modx->aliasListing[$v])){
-                unset($modx->aliasListing[$v]);
-            }
-            $newUri=$modx->makeUrl($v);
-            $modx->db->update(array('uri'=>$newUri),$table,'id ='.$v);
-            makeNewChildsUri($v);
-        }
+		$query="UPDATE $table SET `uri`= REPLACE(`uri`, '".$oldUri."', '".$newUri."') WHERE `uri` LIKE '".$oldUri."%'";
+        $q=$modx->db->query($query);
     }
 }
 
@@ -103,16 +61,13 @@ switch($modx->Event->name){
         $newInfo=$modx->db->getRow($modx->db->query("SELECT parent,alias,uri FROM $table WHERE id=".$idSQL." LIMIT 0,1"));
 		
         if(isset($_SESSION['oldAlias'])&&$_SESSION['oldAlias']!=''&&$_SESSION['oldAlias']!=$newInfo['alias']&&isset($_SESSION['oldUri'])&&$mode=='upd'){
-        //меняем uri документа, дочерних, нового родителя если изменился alias
+        //меняем uri документа, дочерних, родителя если изменился alias
+		// и мы обновляем существующий ресурс
 		
-            //сначала обнуляем uri документа и нового родителя
+            //сначала обнуляем uri документа и родителя
             resetOldUri($idSQL,$newInfo['parent']);
-            //теперь можно обнулить uri для всех детей текущего документа
-            //resetOldChildsUri($idSQL);
-            //устанавливаем новые uri для документа и нового родителя
+            //устанавливаем новые uri для документа и родителя
             makeNewUri($idSQL);
-            //устанавливаем новые uri для всех детей документа пошагово с depth=1
-            //makeNewChildsUri($idSQL);
 			//заменяем uri у всех "детей"
 			$newUri=$modx->db->getValue($modx->db->query("SELECT uri FROM $table WHERE id=".$idSQL." LIMIT 0,1"));
 			replaceChildsUri($idSQL,$_SESSION['oldUri'],$newUri);
