@@ -22,8 +22,9 @@ foreach($q as $item){
 
 5) Добавляем плагин на события OnDocDuplicate, OnBeforeDocFormSave и OnDocFormSave
 
+```php
 require MODX_BASE_PATH .'assets/plugins/makeuri/makeuri.plugin.php';
-
+```
 Не забываем разместить папку makeuri с плагином из архива в папку assets/plugins
 
 
@@ -57,6 +58,14 @@ class synccache{
 class synccacheOriginal{
 ```
 
-11) Отчищаем кеш
+11) Добавляем в начало файла manager/processors/move_document.processor.php строку
 
-12) Добавляем 3 индекса unpub_date, pub_date, menuindex в таблицу site_content
+```php
+include_once(dirname(dirname(__FILE__)) . '/custom/processors/move_document.processor.php');
+exit();
+```
+
+
+12) Отчищаем кеш
+
+13) Добавляем 3 индекса unpub_date, pub_date, menuindex в таблицу site_content
