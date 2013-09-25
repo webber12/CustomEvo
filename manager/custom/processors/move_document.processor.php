@@ -137,14 +137,14 @@ if (!array_search($_REQUEST['id'], $parents)) {
 	
 	
 	$content_table=$modx->getFullTableName("site_content");
-	//получаем старый uri для документа пока не переписали его
+	//РїРѕР»СѓС‡Р°РµРј СЃС‚Р°СЂС‹Р№ uri РґР»СЏ РґРѕРєСѓРјРµРЅС‚Р° РїРѕРєР° РЅРµ РїРµСЂРµРїРёСЃР°Р»Рё РµРіРѕ
 	$oldUri=$modx->db->getValue($modx->db->query("SELECT uri FROM $content_table WHERE id=".$_REQUEST['id']." LIMIT 0,1"));
-	//сначала обнуляем uri документа и нового родителя, потом uri старого родителя
+	//СЃРЅР°С‡Р°Р»Р° РѕР±РЅСѓР»СЏРµРј uri РґРѕРєСѓРјРµРЅС‚Р° Рё РЅРѕРІРѕРіРѕ СЂРѕРґРёС‚РµР»СЏ, РїРѕС‚РѕРј uri СЃС‚Р°СЂРѕРіРѕ СЂРѕРґРёС‚РµР»СЏ
     resetOldUri($_REQUEST['id'],$_REQUEST['new_parent']);
 	resetOldParentUri($oldparent);
-    //устанавливаем новые uri для документа, нового родителя и старого родителя (вдруг он перестал быть папкой?)
+    //СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РЅРѕРІС‹Рµ uri РґР»СЏ РґРѕРєСѓРјРµРЅС‚Р°, РЅРѕРІРѕРіРѕ СЂРѕРґРёС‚РµР»СЏ Рё СЃС‚Р°СЂРѕРіРѕ СЂРѕРґРёС‚РµР»СЏ (РІРґСЂСѓРі РѕРЅ РїРµСЂРµСЃС‚Р°Р» Р±С‹С‚СЊ РїР°РїРєРѕР№?)
     makeNewUri($_REQUEST['id'],$oldparent);
-    //заменяем uri у всех "детей"
+    //Р·Р°РјРµРЅСЏРµРј uri Сѓ РІСЃРµС… "РґРµС‚РµР№"
 	$newUri=$modx->db->getValue($modx->db->query("SELECT uri FROM $content_table WHERE id=".$_REQUEST['id']." LIMIT 0,1"));
 	replaceChildsUri($_REQUEST['id'],$oldUri,$newUri);
 	
