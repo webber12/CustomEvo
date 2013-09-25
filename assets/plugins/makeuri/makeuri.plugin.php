@@ -47,7 +47,7 @@ switch($modx->Event->name){
     }
     case 'OnBeforeDocFormSave':{
         if($modx->Event->params['mode'] == "upd"){
-            //áåðåì ñòàðûå çíà÷åíèÿ ïîêà îíè íå èçìåíèëèñü
+            //Ð±ÐµÑ€ÐµÐ¼ ÑÑ‚Ð°Ñ€Ñ‹Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ Ð¿Ð¾ÐºÐ° Ð¾Ð½Ð¸ Ð½Ðµ Ð¸Ð·Ð¼ÐµÐ½Ð¸Ð»Ð¸ÑÑŒ
             $oldInfo=$modx->db->getRow($modx->db->query("SELECT parent,alias,uri FROM $table WHERE id=".$id." LIMIT 0,1"));
             $_SESSION['oldParent']=$oldInfo['parent'];
             $_SESSION['oldAlias']=$oldInfo['alias'];
@@ -61,14 +61,14 @@ switch($modx->Event->name){
         $newInfo=$modx->db->getRow($modx->db->query("SELECT parent,alias,uri FROM $table WHERE id=".$idSQL." LIMIT 0,1"));
 		
         if(isset($_SESSION['oldAlias'])&&$_SESSION['oldAlias']!=''&&$_SESSION['oldAlias']!=$newInfo['alias']&&isset($_SESSION['oldUri'])&&$mode=='upd'){
-        //ìåíÿåì uri äîêóìåíòà, äî÷åðíèõ, ðîäèòåëÿ åñëè èçìåíèëñÿ alias
-		// è ìû îáíîâëÿåì ñóùåñòâóþùèé ðåñóðñ
+        //Ð¼ÐµÐ½ÑÐµÐ¼ uri Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð°, Ð´Ð¾Ñ‡ÐµÑ€Ð½Ð¸Ñ…, Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»Ñ ÐµÑÐ»Ð¸ Ð¸Ð·Ð¼ÐµÐ½Ð¸Ð»ÑÑ alias
+		// Ð¸ Ð¼Ñ‹ Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ð¹ Ñ€ÐµÑÑƒÑ€Ñ
 		
-            //ñíà÷àëà îáíóëÿåì uri äîêóìåíòà è ðîäèòåëÿ
+            //ÑÐ½Ð°Ñ‡Ð°Ð»Ð° Ð¾Ð±Ð½ÑƒÐ»ÑÐµÐ¼ uri Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð° Ð¸ Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»Ñ
             resetOldUri($idSQL,$newInfo['parent']);
-            //óñòàíàâëèâàåì íîâûå uri äëÿ äîêóìåíòà è ðîäèòåëÿ
+            //ÑƒÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ Ð½Ð¾Ð²Ñ‹Ðµ uri Ð´Ð»Ñ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð° Ð¸ Ñ€Ð¾Ð´Ð¸Ñ‚ÐµÐ»Ñ
             makeNewUri($idSQL);
-			//çàìåíÿåì uri ó âñåõ "äåòåé"
+			//Ð·Ð°Ð¼ÐµÐ½ÑÐµÐ¼ uri Ñƒ Ð²ÑÐµÑ… "Ð´ÐµÑ‚ÐµÐ¹"
 			$newUri=$modx->db->getValue($modx->db->query("SELECT uri FROM $table WHERE id=".$idSQL." LIMIT 0,1"));
 			replaceChildsUri($idSQL,$_SESSION['oldUri'],$newUri);
         	//exit;
