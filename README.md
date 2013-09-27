@@ -69,3 +69,10 @@ exit();
 12) Отчищаем кеш
 
 13) Добавляем 3 индекса unpub_date, pub_date, menuindex в таблицу site_content
+
+14) Добавляем в начало файла manager/actions/mutate_content.dynamic.php строку
+
+```php
+include_once(dirname(dirname(__FILE__)) . '/custom/actions/mutate_content.dynamic.php');
+exit();
+```
