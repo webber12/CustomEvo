@@ -185,7 +185,7 @@ class DocumentParser extends DocumentParserOriginal{
 			
 			if($TvIDsStr!=''){
 				$TvIDsStr=substr($TvIDsStr,0,-1);
-				$tvsq2="SELECT tmplvarid,value FROM ".$this->getFullTableName("site_tmplvar_contentvalues")." WHERE tmplvarid IN (".$TvIDsStr.") LIMIT 0,".count($tmpTvs);
+				$tvsq2="SELECT tmplvarid,value FROM ".$this->getFullTableName("site_tmplvar_contentvalues")." WHERE tmplvarid IN (".$TvIDsStr.") AND contentid = '" . $documentObject['id'] . "' LIMIT 0,".count($tmpTvs);
 				$query2=$this->db->query($tvsq2);
 				$rs=$this->db->getRecordCount($query2);
 				while($row2=$this->db->getRow($query2)){
