@@ -754,7 +754,7 @@ $page=isset($_REQUEST['page'])?(int)$_REQUEST['page']:'';
                         $template = $content['template'];
                 }
 
-                $sql = 'SELECT DISTINCT tv.*, IF(tvc.value!=\'\',tvc.value,tv.default_text) as value '.
+            /*    $sql = 'SELECT DISTINCT tv.*, IF(tvc.value!=\'\',tvc.value,tv.default_text) as value '.
                        'FROM '.$tbl_site_tmplvars.' AS tv '.
                        'INNER JOIN '.$tbl_site_tmplvar_templates.' AS tvtpl ON tvtpl.tmplvarid = tv.id '.
                        'LEFT JOIN '.$tbl_site_tmplvar_contentvalues.' AS tvc ON tvc.tmplvarid=tv.id AND tvc.contentid=\''.$id.'\' '.
@@ -762,16 +762,58 @@ $page=isset($_REQUEST['page'])?(int)$_REQUEST['page']:'';
                        'WHERE tvtpl.templateid=\''.$template.'\' AND (1=\''.$_SESSION['mgrRole'].'\' OR ISNULL(tva.documentgroup)'.
                        (!$docgrp ? '' : ' OR tva.documentgroup IN ('.$docgrp.')').
                        ') ORDER BY tvtpl.rank,tv.rank, tv.id';
-				echo $sql;
-                $rs = $modx->db->query($sql);
-                $limit = $modx->db->getRecordCount($rs);
+					   */
+					$tvsq = 'SELECT DISTINCT tv.* '.
+                       'FROM '.$tbl_site_tmplvars.' AS tv '.
+                       'INNER JOIN '.$tbl_site_tmplvar_templates.' AS tvtpl ON tvtpl.tmplvarid = tv.id '.
+                       'LEFT JOIN '.$tbl_site_tmplvar_access.' AS tva ON tva.tmplvarid=tv.id '.
+                       'WHERE tvtpl.templateid=\''.$template.'\' AND (1=\''.$_SESSION['mgrRole'].'\' OR ISNULL(tva.documentgroup)'.
+                       (!$docgrp ? '' : ' OR tva.documentgroup IN ('.$docgrp.')').
+                       ') ORDER BY tvtpl.rank,tv.rank, tv.id';
+				$TvIDsStr='';
+
+				$tmpTVs=array();
+				$q=$modx->db->query($tvsq);
+				while($r=$modx->db->getRow($q)){
+					$tmpTVs[$r['id']]['id']=$r['id'];
+					$tmpTVs[$r['id']]['type']=$r['type'];
+					$tmpTVs[$r['id']]['name']=$r['name'];
+					$tmpTVs[$r['id']]['caption']=$r['caption'];
+					$tmpTVs[$r['id']]['description']=$r['decription'];
+					$tmpTVs[$r['id']]['editor_type']=$r['editor_type'];
+					$tmpTVs[$r['id']]['category']=$r['category'];
+					$tmpTVs[$r['id']]['locked']=$r['locked'];
+					$tmpTVs[$r['id']]['elements']=$r['elements'];
+					$tmpTVs[$r['id']]['rank']=$r['rank'];
+					$tmpTVs[$r['id']]['display']=$r['display'];
+					$tmpTVs[$r['id']]['display_params']=$r['display_params'];
+					$tmpTVs[$r['id']]['value']=$r['default_text'];
+					$TvIDsStr.=$r['id'].',';
+				}
+				
+				if($TvIDsStr!=''){
+					$TvIDsStr=substr($TvIDsStr,0,-1);
+					$tvsq2="SELECT tmplvarid,value FROM ".$tbl_site_tmplvar_contentvalues." WHERE tmplvarid IN (".$TvIDsStr.") AND contentid=".$id." LIMIT 0,".count($tmpTVs);
+					$q2=$modx->db->query($tvsq2);
+					$rs2=$modx->db->getRecordCount($q2);
+					while($row2=$modx->db->getRow($q2)){
+						if(isset($tmpTVs[$row2['tmplvarid']]['value'])&&$row2['value']!=''){
+							$tmpTVs[$row2['tmplvarid']]['value']=$row2['value'];
+						}
+					}
+				}				
+				
+              // $rs = $modx->db->query($sql);
+                //$limit = $modx->db->getRecordCount($rs);
+					$limit=count($tmpTVs);
                 if ($limit > 0) {
                     echo "\t".'<table style="position:relative;" border="0" cellspacing="0" cellpadding="3" width="96%">'."\n";
                     require_once(MODX_MANAGER_PATH.'includes/tmplvars.inc.php');
                     require_once(MODX_MANAGER_PATH.'includes/tmplvars.commands.inc.php');
-                    for ($i = 0; $i < $limit; $i++) {
+                //    for ($i = 0; $i < $limit; $i++) {
+					foreach($tmpTVs as $row){
                         // Go through and display all Template Variables
-                        $row = $modx->db->getRow($rs);
+                    //    $row = $modx->db->getRow($rs);
                         if ($row['type'] == 'richtext' || $row['type'] == 'htmlarea') {
                             // Add richtext editor to the list
                             if (is_array($replace_richtexteditor)) {
