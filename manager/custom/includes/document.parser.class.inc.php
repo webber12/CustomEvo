@@ -333,7 +333,7 @@ class DocumentParser extends DocumentParserOriginal{
     }
 
     function getChildIds($id, $depth= 10, $children= array ()) {
-        if(empty($this->documentMap)){
+        if(empty($this->documentMap)||!isset($this->documentMap[$id])){
             $this->_loadChildIds($id,$depth);//we don`t need all the levels from root
         }
         // Get all the children for this parent node
