@@ -320,20 +320,21 @@ class DocumentParser extends DocumentParserOriginal{
         return $parents;
     }
 
-    private function _loadChildIds($id){
+    private function _loadChildIds($id,$depth){//we don`t need all the levels from root
         $sql = $this->db->query("SELECT id,isfolder FROM ".$this->getFullTableName("site_content")." WHERE parent=".$id);
         $sql = $this->db->makeArray($sql);
+		$depth--;
         foreach($sql as $item){
             $this->documentMap[$id][] = $item['id'];
-            if($item['isfolder']){
-                $this->_loadChildIds($item['id']);
+            if($item['isfolder']&&$depth>=1){//we don`t need all the levels from root
+                $this->_loadChildIds($item['id'],$depth);
             }
         }
     }
 
     function getChildIds($id, $depth= 10, $children= array ()) {
         if(empty($this->documentMap)){
-            $this->_loadChildIds(0);
+            $this->_loadChildIds($id,$depth);//we don`t need all the levels from root
         }
         // Get all the children for this parent node
         if (isset($this->documentMap[$id])) {
